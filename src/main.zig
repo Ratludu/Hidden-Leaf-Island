@@ -2,6 +2,7 @@ const std = @import("std");
 const Hidden_Leaf_Island = @import("Hidden_Leaf_Island");
 const rl = @import("raylib");
 const Entities = @import("entities/player.zig");
+const Map = @import("maps/basemap.zig");
 
 fn toggleFullScreen(windowWidth: i32, windowHeight: i32) void {
     if (!rl.isWindowFullscreen()) {
@@ -25,8 +26,12 @@ pub fn main() anyerror!void {
 
     rl.setTargetFPS(60); // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
-    var player = try Entities.Player.init();
+    var player = try Entities.Player.init(screenWidth, screenHeight);
     defer rl.unloadTexture(player.playerSprite);
+
+    var basemap = try Map.BaseMap.init();
+    defer rl.unloadTexture(basemap.grass);
+    defer rl.unloadTexture(basemap.soil);
 
     // Main game loop
     while (!rl.windowShouldClose()) { // Detect window close button or ESC key
@@ -39,9 +44,10 @@ pub fn main() anyerror!void {
         player.resetToIdle();
 
         if (rl.isKeyDown(rl.KeyboardKey.e)) {
-            player.update(.hoeForward);
+            player.update(.hoe);
         }
         player.walkingUpdate();
+        player.updateCam();
 
         player.anim.animationUpdate();
         //----------------------------------------------------------------------------------
@@ -53,9 +59,14 @@ pub fn main() anyerror!void {
         rl.beginDrawing();
         defer rl.endDrawing();
 
-        player.animate(screenWidth, screenHeight);
+        rl.beginMode2D(player.cam);
+        defer rl.endMode2D();
 
-        rl.clearBackground(.sky_blue);
+        basemap.draw();
+
+        player.animate();
+
+        rl.clearBackground(.white);
 
         //----------------------------------------------------------------------------------
     }
