@@ -1,6 +1,18 @@
 const std = @import("std");
 const Hidden_Leaf_Island = @import("Hidden_Leaf_Island");
 const rl = @import("raylib");
+const Entities = @import("entities/player.zig");
+
+fn toggleFullScreen(windowWidth: i32, windowHeight: i32) void {
+    if (!rl.isWindowFullscreen()) {
+        const monitor = rl.getCurrentMonitor();
+        rl.setWindowSize(rl.getMonitorWidth(monitor), rl.getMonitorHeight(monitor));
+        rl.toggleFullscreen();
+    } else {
+        rl.toggleFullscreen();
+        rl.setWindowSize(windowWidth, windowHeight);
+    }
+}
 
 pub fn main() anyerror!void {
     // Initialization
@@ -13,31 +25,25 @@ pub fn main() anyerror!void {
 
     rl.setTargetFPS(60); // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
-    const sprite = try rl.loadTexture("/home/ratludu/assets/Sprout Lands - Sprites - premium pack/Characters/Basic Charakter Actions.png");
-    defer rl.unloadTexture(sprite);
-
-    const sourceRect = rl.Rectangle{
-        .x = 0.0,
-        .y = 0.0,
-        .width = 32.0,
-        .height = 32.0,
-    };
-
-    const destRect = rl.Rectangle{
-        .x = screenWidth / 2 - 32,
-        .y = screenHeight / 2 - 32,
-        .width = 64.0,
-        .height = 64.0,
-    };
-
-    const positiion = rl.Vector2{
-        .x = destRect.width + destRect.width / 2,
-        .y = destRect.height + destRect.width / 2,
-    };
+    var player = try Entities.Player.init();
+    defer rl.unloadTexture(player.playerSprite);
 
     // Main game loop
     while (!rl.windowShouldClose()) { // Detect window close button or ESC key
+        // Full screen toggle
+        if (rl.isKeyDown(rl.KeyboardKey.left_super) and rl.isKeyPressed(rl.KeyboardKey.f)) {
+            toggleFullScreen(screenWidth, screenHeight);
+        }
         // Update
+
+        player.resetToIdle();
+
+        if (rl.isKeyDown(rl.KeyboardKey.e)) {
+            player.update(.hoeForward);
+        }
+        player.walkingUpdate();
+
+        player.anim.animationUpdate();
         //----------------------------------------------------------------------------------
         // TODO: Update your variables here
         //----------------------------------------------------------------------------------
@@ -46,11 +52,11 @@ pub fn main() anyerror!void {
         //----------------------------------------------------------------------------------
         rl.beginDrawing();
         defer rl.endDrawing();
-        rl.drawTexturePro(sprite, sourceRect, destRect, positiion, 0.0, .white);
 
-        rl.clearBackground(.white);
+        player.animate(screenWidth, screenHeight);
 
-        rl.drawText("Congrats! You created your first window!", 190, 200, 20, .light_gray);
+        rl.clearBackground(.sky_blue);
+
         //----------------------------------------------------------------------------------
     }
 }
